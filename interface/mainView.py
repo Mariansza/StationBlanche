@@ -9,7 +9,7 @@ class MainView(tk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
-        button_font = ("Arial", 20)  # Assurez-vous d'utiliser une police disponible
+        button_font = ("bitstream charter", 40)
         button_bg_color = "#34495e"
         button_fg_color = "#ecf0f1"
         button_hover_color = "#1abc9c"
@@ -39,7 +39,7 @@ class WelcomeView(tk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
-        welcome_label = tk.Label(self, text="Toucher pour commencer", font=("Arial", 40), fg="#ecf0f1", bg="#2c3e50")
+        welcome_label = tk.Label(self, text="Toucher pour commencer", font=("bitstream charter", 40), fg="#ecf0f1", bg="#2c3e50")
         welcome_label.place(relx=0.5, rely=0.5, anchor='center')
         self.bind("<Button-1>", lambda event: self.master.switch_frame(MainView))
 
