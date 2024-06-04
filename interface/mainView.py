@@ -9,7 +9,7 @@ class MainView(tk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
-        button_font = ("bitstream charter", 40)
+        button_font = ("bitstream charter", 60)
         button_bg_color = "#34495e"
         button_fg_color = "#ecf0f1"
         button_hover_color = "#1abc9c"
