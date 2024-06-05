@@ -2,27 +2,52 @@ import os
 import subprocess
 import sys
 
-def scan_file(file_path):
+def scan_file_clamav(file_path):
     try:
         result = subprocess.run(['clamscan', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output = result.stdout.decode('utf-8')
         if "OK" in output:
-            print(f"Le fichier {file_path} est propre.")
+            print(f"ClamAV: Le fichier {file_path} est propre.")
             return True
         else:
-            print(f"Le fichier {file_path} est infecté.")
-            print(output)
+            print(f"ClamAV: Le fichier {file_path} est infecté.")
             return False
     except Exception as e:
-        print(f"Une erreur s'est produite lors de l'analyse {file_path}: {str(e)}")
+        print(f"ClamAV: Une erreur s'est produite lors de l'analyse {file_path}: {str(e)}")
+        return False
+    
+def scan_file_sophos(file_path):
+    try:
+        result = subprocess.run(['/opt/sophos-av/bin/savscan', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            output = result.stdout.decode('utf-8')
+        except UnicodeDecodeError:
+            output = result.stdout.decode('latin-1')
+        if ">>> Virus" not in output:
+            print(f"Sophos: Le fichier {file_path} est propre.")
+            return True 
+        else: 
+            print(f"Sophos: Le fichier {file_path} est infecté.")
+            return False
+    except Exception as e:
+        print(f"Sophos: Une erreur s'est produite lors de l'analyse {file_path}: {str(e)}")
         return False
 
-def scan_directory(directory_path):
+def scan_directory_clamav(directory_path):
     infected_files = []
     for root, dirs, files in os.walk(directory_path):
         for file in files:
             file_path = os.path.join(root, file)
-            if not scan_file(file_path):
+            if not scan_file_clamav(file_path):
+                infected_files.append(file_path)
+    return infected_files
+
+def scan_directory_sophos(directory_path):
+    infected_files = []
+    for root, dirs, files in os.walk(directory_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            if not scan_file_sophos(file_path):
                 infected_files.append(file_path)
     return infected_files
 
@@ -66,23 +91,28 @@ if __name__ == "__main__":
 
     if os.path.isfile(usb_mount_point):
         print(f"Scan du fichier: {usb_mount_point}")
-        if scan_file(usb_mount_point):
-            print("Aucun fichier infecté trouvé.")
-        else:
-            print("Fichier infecté trouvé. /n Analyse du système avec Chkrootkit...")
+        clamav_infected = not scan_file_clamav(usb_mount_point)
+        sophos_infected = not scan_file_sophos(usb_mount_point)
+        if clamav_infected or sophos_infected:
+            print("Fichier infecté trouvé. \nAnalyse du système avec Chkrootkit...")
             if scan_system_with_chkrootkit():
                 print("Le système est propre.")
             else:
                 print("Le système est infecté par un rootkit.")
+        else:
+            print("Aucun fichier infecté trouvé.")
 
     elif os.path.isdir(usb_mount_point):
         print(f"Analyse du dossier: {usb_mount_point}")
-        infected_files = scan_directory(usb_mount_point)
-        if infected_files:
+        clamav_infected_files = scan_directory_clamav(usb_mount_point)
+        sophos_infected_files = scan_directory_sophos(usb_mount_point)
+        if clamav_infected_files or sophos_infected_files:
             print("Fichiers infectés trouvés:")
-            for file in infected_files:
-                print(file)
-            print ("Analyse du système avec Chkrootkit...")
+            for file in clamav_infected_files:
+                print(f"ClamAV: {file}")
+            for file in sophos_infected_files:
+                print(f"Sophos: {file}")
+            print("Analyse du système avec Chkrootkit...")
             if scan_system_with_chkrootkit():
                 print("Le système est propre.")
             else:
