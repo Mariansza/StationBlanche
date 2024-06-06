@@ -80,6 +80,14 @@ def find_usb_mount_point():
         print(f"Une erreur s'est produite lors de la détection de la clé USB montée: {str(e)}")
         return None
 
+def delete_infected_files(infected_files):
+    for file in infected_files:
+        try:
+            os.remove(file)
+            print(file)
+        except Exception as e:
+            print(f"Une erreur s'est produite lors de la suppression du fichier {file}: {str(e)}")
+
 if __name__ == "__main__":
     usb_mount_point = find_usb_mount_point()
 
@@ -89,29 +97,16 @@ if __name__ == "__main__":
 
     print(f"Clé USB trouvée et montée sur: {usb_mount_point}")
 
-    if os.path.isfile(usb_mount_point):
-        print(f"Scan du fichier: {usb_mount_point}")
-        clamav_infected = not scan_file_clamav(usb_mount_point)
-        sophos_infected = not scan_file_sophos(usb_mount_point)
-        if clamav_infected or sophos_infected:
-            print("Fichier infecté trouvé. \nAnalyse du système avec Chkrootkit...")
-            if scan_system_with_chkrootkit():
-                print("Le système est propre.")
-            else:
-                print("Le système est infecté par un rootkit.")
-        else:
-            print("Aucun fichier infecté trouvé.")
-
-    elif os.path.isdir(usb_mount_point):
+    if os.path.isdir(usb_mount_point):
         print(f"Analyse du dossier: {usb_mount_point}")
         clamav_infected_files = scan_directory_clamav(usb_mount_point)
+        print(f"Première analyse terminée.")
         sophos_infected_files = scan_directory_sophos(usb_mount_point)
-        if clamav_infected_files or sophos_infected_files:
-            print("Fichiers infectés trouvés:")
-            for file in clamav_infected_files:
-                print(f"ClamAV: {file}")
-            for file in sophos_infected_files:
-                print(f"Sophos: {file}")
+        print(f"Deuxième analyse terminée.")
+        all_infected_files = set(clamav_infected_files + sophos_infected_files)
+        if all_infected_files:
+            print("Fichiers infectés trouvés et supprimés:")
+            delete_infected_files(all_infected_files)
             print("Analyse du système avec Chkrootkit...")
             if scan_system_with_chkrootkit():
                 print("Le système est propre.")
