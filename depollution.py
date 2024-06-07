@@ -88,7 +88,18 @@ def delete_infected_files(infected_files):
         except Exception as e:
             print(f"Une erreur s'est produite lors de la suppression du fichier {file}: {str(e)}")
 
-if __name__ == "__main__":
+def unmount_usb(mount_point):
+    try:
+        result = subprocess.run(['sudo', 'umount', mount_point], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            print(f"La clé USB montée sur {mount_point} a été démontée avec succès.")
+        else:
+            print(f"Une erreur s'est produite lors du démontage de la clé USB montée sur {mount_point}.")
+    except Exception as e:
+        print(f"Une erreur s'est produite lors du démontage de la clé USB: {str(e)}")
+
+
+def main_scan():
     usb_mount_point = find_usb_mount_point()
 
     if not usb_mount_point:
@@ -112,8 +123,14 @@ if __name__ == "__main__":
                 print("Le système est propre.")
             else:
                 print("Le système est infecté par un rootkit.")
+            print("Relance de l'analyse complète...")
+            main_scan()
         else:
             print("Aucun fichier infecté trouvé.")
+            unmount_usb(usb_mount_point)
     else:
         print(f"Le chemin fourni n'est ni un fichier ni un répertoire: {usb_mount_point}")
         sys.exit(1)
+
+if __name__ == "__main__":
+    main_scan()
