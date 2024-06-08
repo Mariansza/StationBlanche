@@ -29,7 +29,7 @@ class MainView(tk.Frame):
         import_data_button.bind("<Leave>", lambda e: import_data_button.configure(bg=button_bg_color))
 
     def show_depollution_view(self):
-        self.master.switch_frame(DepollutionView)
+        self.master.switch_frame(lambda master: DepollutionView(master))
 
 class WelcomeView(tk.Frame):
     def __init__(self, master):
@@ -39,7 +39,7 @@ class WelcomeView(tk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
-        welcome_label = tk.Label(self, text="Toucher pour commencer", font=("bitstream charter", 40), fg="#ecf0f1", bg="#2c3e50")
+        welcome_label = tk.Label(self, text="Touchez pour commencer", font=("bitstream charter", 70), fg="#ecf0f1", bg="#2c3e50")
         welcome_label.place(relx=0.5, rely=0.5, anchor='center')
         self.bind("<Button-1>", lambda event: self.master.switch_frame(MainView))
 

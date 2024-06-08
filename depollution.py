@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import queue
 
 def scan_file_clamav(file_path):
     try:
@@ -51,19 +52,22 @@ def scan_directory_sophos(directory_path):
                 infected_files.append(file_path)
     return infected_files
 
-def scan_system_with_chkrootkit():
+def scan_system_with_chkrootkit(message_queue):
     try:
         result = subprocess.run(['sudo', 'chkrootkit'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output = result.stdout.decode('utf-8')
         print(output)
         if "INFECTED" in output:
             print("Le système est infecté par un rootkit.")
+            message_queue.put("Le système est infecté par un rootkit.") 
             return False
         else:
             print("Aucun rootkit trouvé sur le système.")
+            message_queue.put("Aucun rootkit trouvé sur le système.")
             return True
     except Exception as e:
         print(f"Une erreur s'est produite lors de l'analyse du système avec Chkrootkit: {str(e)}")
+        message_queue.put(f"Une erreur s'est produite lors de l'analyse du système avec Chkrootkit: {str(e)}")
         return False
 
 def find_usb_mount_point():
@@ -80,57 +84,75 @@ def find_usb_mount_point():
         print(f"Une erreur s'est produite lors de la détection de la clé USB montée: {str(e)}")
         return None
 
-def delete_infected_files(infected_files):
+def delete_infected_files(infected_files, message_queue):
     for file in infected_files:
         try:
             os.remove(file)
+            message_queue.put(f"supprimé: {file}")
             print(file)
         except Exception as e:
             print(f"Une erreur s'est produite lors de la suppression du fichier {file}: {str(e)}")
 
-def unmount_usb(mount_point):
+def unmount_usb(mount_point, message_queue):
     try:
         result = subprocess.run(['sudo', 'umount', mount_point], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
             print(f"La clé USB montée sur {mount_point} a été démontée avec succès.")
+            message_queue.put(f"\n \n La clé USB a été démontée avec succès.\n Vous pouvez retirer la clé.")
+
         else:
             print(f"Une erreur s'est produite lors du démontage de la clé USB montée sur {mount_point}.")
     except Exception as e:
         print(f"Une erreur s'est produite lors du démontage de la clé USB: {str(e)}")
 
 
-def main_scan():
+def main_scan(message_queue):
     usb_mount_point = find_usb_mount_point()
 
     if not usb_mount_point:
         print("Aucune clé USB montée n'a été trouvée.")
+        message_queue.put("Aucune clé USB montée n'a été trouvée.")
         sys.exit(1)
 
     print(f"Clé USB trouvée et montée sur: {usb_mount_point}")
+    message_queue.put(f"Clé USB trouvée, lancement de la dépollution.")
 
     if os.path.isdir(usb_mount_point):
+        message_queue.put(f"Lancement de la première analyse antivirus.")
+        message_queue.put(f"Première analyse en cours, veuillez patienter...")
         print(f"Analyse du dossier: {usb_mount_point}")
         clamav_infected_files = scan_directory_clamav(usb_mount_point)
         print(f"Première analyse terminée.")
+        message_queue.put(f"Première analyse terminée.")
+        message_queue.put(f"Lancement de la deuxième analyse antivirus.")
+        message_queue.put(f"Deuxième analyse en cours, veuillez patienter...")
         sophos_infected_files = scan_directory_sophos(usb_mount_point)
         print(f"Deuxième analyse terminée.")
+        message_queue.put(f"Deuxième analyse terminée.")
         all_infected_files = set(clamav_infected_files + sophos_infected_files)
         if all_infected_files:
             print("Fichiers infectés trouvés et supprimés:")
-            delete_infected_files(all_infected_files)
+            message_queue.put("Fichiers infectés trouvés et supprimés:")
+            delete_infected_files(all_infected_files, message_queue)
             print("Analyse du système avec Chkrootkit...")
-            if scan_system_with_chkrootkit():
+            message_queue.put("Analyse du système avec Chkrootkit...")
+            if scan_system_with_chkrootkit(message_queue):
                 print("Le système est propre.")
+                message_queue.put("Analyse terminée, le système est propre.")
             else:
                 print("Le système est infecté par un rootkit.")
+                message_queue.put("Le système est infecté par un rootkit.")
             print("Relance de l'analyse complète...")
-            main_scan()
+            message_queue.put("Relance de l'analyse complète...")
+            main_scan(message_queue)
         else:
             print("Aucun fichier infecté trouvé.")
-            unmount_usb(usb_mount_point)
+            message_queue.put("Aucun fichier infecté trouvé.")
+            unmount_usb(usb_mount_point, message_queue)
     else:
         print(f"Le chemin fourni n'est ni un fichier ni un répertoire: {usb_mount_point}")
         sys.exit(1)
 
 if __name__ == "__main__":
-    main_scan()
+    message_queue = queue.Queue()
+    main_scan(message_queue)
