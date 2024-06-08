@@ -98,7 +98,7 @@ def unmount_usb(mount_point, message_queue):
         result = subprocess.run(['sudo', 'umount', mount_point], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
             print(f"La clé USB montée sur {mount_point} a été démontée avec succès.")
-            message_queue.put(f"\n \n La clé USB a été démontée avec succès.\n Vous pouvez retirer la clé.")
+            message_queue.put(f"\n  La clé USB a été démontée avec succès.\n Vous pouvez retirer la clé.")
 
         else:
             print(f"Une erreur s'est produite lors du démontage de la clé USB montée sur {mount_point}.")
