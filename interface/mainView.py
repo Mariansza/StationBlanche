@@ -1,5 +1,6 @@
 import tkinter as tk
 from depollutionView import DepollutionView
+from importInstructionView import ImportInstructionView
 
 class MainView(tk.Frame):
     def __init__(self, master):
@@ -27,9 +28,13 @@ class MainView(tk.Frame):
         import_data_button.pack(pady=20)
         import_data_button.bind("<Enter>", lambda e: import_data_button.configure(bg=button_hover_color))
         import_data_button.bind("<Leave>", lambda e: import_data_button.configure(bg=button_bg_color))
+        import_data_button.config(command=self.show_import_view)
 
     def show_depollution_view(self):
         self.master.switch_frame(lambda master: DepollutionView(master))
+
+    def show_import_view(self):
+        self.master.switch_frame(lambda master: ImportInstructionView(master))
 
 class WelcomeView(tk.Frame):
     def __init__(self, master):

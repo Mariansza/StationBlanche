@@ -1,7 +1,7 @@
 import os
 import subprocess
-import sys
 import queue
+import sys
 
 def scan_file_clamav(file_path):
     try:
@@ -16,7 +16,7 @@ def scan_file_clamav(file_path):
     except Exception as e:
         print(f"ClamAV: Une erreur s'est produite lors de l'analyse {file_path}: {str(e)}")
         return False
-    
+
 def scan_file_sophos(file_path):
     try:
         result = subprocess.run(['/opt/sophos-av/bin/savscan', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -115,7 +115,7 @@ def main_scan(message_queue):
         sys.exit(1)
 
     print(f"Clé USB trouvée et montée sur: {usb_mount_point}")
-    message_queue.put(f"Clé USB trouvée, lancement de la dépollution.")
+    message_queue.put(f"Clé USB trouvée, lancement de l'analyse.")
 
     if os.path.isdir(usb_mount_point):
         message_queue.put(f"Lancement de la première analyse antivirus.")
@@ -148,11 +148,6 @@ def main_scan(message_queue):
         else:
             print("Aucun fichier infecté trouvé.")
             message_queue.put("Aucun fichier infecté trouvé.")
-            unmount_usb(usb_mount_point, message_queue)
     else:
         print(f"Le chemin fourni n'est ni un fichier ni un répertoire: {usb_mount_point}")
         sys.exit(1)
-
-if __name__ == "__main__":
-    message_queue = queue.Queue()
-    main_scan(message_queue)
