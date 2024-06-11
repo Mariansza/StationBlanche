@@ -13,11 +13,16 @@ class InsertSecureUsbView(tk.Frame):
 
     def create_widgets(self):
         message_label = tk.Label(self, text="Veuillez insérer la clé sécurisée, puis appuyez sur OK", font=("bitstream charter", 50), fg="white", bg="#2c3e50")
-        message_label.pack(pady=40)
+        message_label.grid(row=0, column=0, pady=40)
 
         ok_button = tk.Button(self, text="OK", font=("bitstream charter", 100), bg="#34495e", fg="#ecf0f1", bd=0, highlightthickness=0, width=15, height=2)
-        ok_button.pack(pady=20)
+        ok_button.grid(row=1, column=0, pady=20)
         ok_button.config(command=self.start_depuration_process)
+
+        # Centrer les widgets dans la fenêtre
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
     def start_depuration_process(self):
         # Change la vue immédiatement
