@@ -108,13 +108,19 @@ class ImportScanView(tk.Frame):
         popup = Toplevel(self)
         popup.title(title)
 
-        screen_width = popup.winfo_screenwidth()
-        screen_height = popup.winfo_screenheight()
+        # Get the geometry of the master window
+        master_x = self.master.winfo_x()
+        master_y = self.master.winfo_y()
+        master_width = self.master.winfo_width()
+        master_height = self.master.winfo_height()
 
-        x = (screen_width // 4) - (1200 // 2)
-        y = (screen_height // 2) - (700 // 2)
+        # Calculate the position for the popup to center it in the master window
+        popup_width = 1200
+        popup_height = 700
+        x = master_x + (master_width // 2) - (popup_width // 2)
+        y = master_y + (master_height // 2) - (popup_height // 2)
 
-        popup.geometry('%dx%d+%d+%d' % (1200, 700, x, y))
+        popup.geometry('%dx%d+%d+%d' % (popup_width, popup_height, x, y))
 
         label = Label(popup, text=message, font=("bitstream charter", 50), fg=fg)
         label.pack(pady=20)
@@ -144,3 +150,4 @@ class ImportScanView(tk.Frame):
         popup.destroy()
         if "Aucun fichier infecté trouvé." in message:
             self.master.switch_frame(lambda master: ImportSelectView(master))
+

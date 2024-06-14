@@ -15,7 +15,7 @@ class DepollutionResultView(tk.Frame):
         self.animation_running = True
         self.create_widgets()
         self.update_messages()
-        self.animate_loading()  # Commencer l'animation au démarrage
+        self.animate_loading() 
         self.popup = None
         self.start_usb_monitor()
 
@@ -24,7 +24,7 @@ class DepollutionResultView(tk.Frame):
         frame.pack(pady=20, padx=20, fill=tk.BOTH, expand=True)
 
         self.message_label = tk.Label(frame, text="\n Dépollution en cours, veuillez patienter...", font=("bitstream charter", 70), fg="white", bg="#2c3e50")
-        self.message_label.pack(pady=10, padx=10, )
+        self.message_label.pack(pady=10, padx=10)
 
         # Frame pour la barre de progression, le pourcentage et l'animation
         self.progress_frame = tk.Frame(self, bg="#2c3e50")
@@ -40,7 +40,7 @@ class DepollutionResultView(tk.Frame):
         style.configure("custom.Horizontal.TProgressbar", foreground='#00D6E0', background='#00D6E0')
 
         self.progress = ttk.Progressbar(self.progress_frame, style="custom.Horizontal.TProgressbar", orient="horizontal", length=1500, mode="determinate")
-        self.progress.pack(pady=10, ipady=20)  # ipady pour augmenter l'épaisseur de la barre
+        self.progress.pack(pady=10, ipady=20)
         self.progress["value"] = 0
         self.progress["maximum"] = 100
 
@@ -63,13 +63,12 @@ class DepollutionResultView(tk.Frame):
                 self.progress["value"] = progress
                 self.progress_label.config(text=f"{int(progress)}%")
 
-               
             elif "Aucun fichier infecté trouvé." in message:
-                self.animation_running = False  # Stopper l'animation
+                self.animation_running = False 
                 self.message_label.config(text="Dépollution terminée")
                 self.show_custom_popup("Information", "Aucun fichier infecté trouvé. \n Vous pouvez retirer votre clé.")
-                self.animation_label.destroy() # Supprimer l'animation et la barre de progression
-                
+                self.animation_label.destroy()  
+
             elif "Fichiers infectés trouvés et supprimés" in message:
                 self.animation_running = False
                 self.message_label.config(text="Dépollution terminée")
@@ -82,8 +81,6 @@ class DepollutionResultView(tk.Frame):
                 from depollutionView import DepollutionView
                 self.master.switch_frame(DepollutionView)
                 self.master._frame.usb_event('add', None)
-                
-
         except queue.Empty:
             pass
 
@@ -98,32 +95,35 @@ class DepollutionResultView(tk.Frame):
 
     def load_animation_images(self):
         self.animation_images = []
-        for i in range(1, 31): 
+        for i in range(1, 31):
             image_path = f"images/loading/{i}.png"
             image = Image.open(image_path)
             image = image.resize((300, 300), Image.LANCZOS)
             self.animation_images.append(ImageTk.PhotoImage(image))
         self.animation_cycle = itertools.cycle(self.animation_images)
-        
+
     def animate_loading(self):
         if self.animation_running:
             self.animation_label.config(image=next(self.animation_cycle))
-            self.after(25, self.animate_loading)  # Changer d'image toutes les 100 ms
+            self.after(25, self.animate_loading)  
 
     def show_custom_popup(self, title, message, fg="black"):
         self.popup = Toplevel(self)
         self.popup.title(title)
 
-        # Get the screen width and height
-        screen_width = self.popup.winfo_screenwidth()
-        screen_height = self.popup.winfo_screenheight()
+       
+        master_x = self.master.winfo_x()
+        master_y = self.master.winfo_y()
+        master_width = self.master.winfo_width()
+        master_height = self.master.winfo_height()
 
-        # Calculate position
-        x = (screen_width // 4) - (1200 // 2)
-        y = (screen_height // 2) - (700 // 2)
+       
+        popup_width = 1200
+        popup_height = 700
+        x = master_x + (master_width // 2) - (popup_width // 2)
+        y = master_y + (master_height // 2) - (popup_height // 2)
 
-        # Set the position of the window to the center of the screen
-        self.popup.geometry('%dx%d+%d+%d' % (1200, 700, x, y))  # Augmenter la hauteur pour l'image
+        self.popup.geometry('%dx%d+%d+%d' % (popup_width, popup_height, x, y))
 
         label = Label(self.popup, text=message, font=("bitstream charter", 50), fg=fg)
         label.pack(pady=20)
@@ -131,24 +131,24 @@ class DepollutionResultView(tk.Frame):
         if "Aucun fichier infecté trouvé." in message:
             image_path = "images/check.png"
             image = Image.open(image_path)
-            image = image.resize((250, 250), Image.LANCZOS)  # Redimensionner l'image si nécessaire
+            image = image.resize((250, 250), Image.LANCZOS)
             photo = ImageTk.PhotoImage(image)
             image_label = Label(self.popup, image=photo)
-            image_label.image = photo  # Garder une référence à l'image pour éviter qu'elle soit garbage collected
+            image_label.image = photo
             image_label.pack(pady=10)
-        
+
         else:
             image_path = "images/wrong2.png"
             image = Image.open(image_path)
-            image = image.resize((150, 150), Image.LANCZOS)  # Redimensionner l'image si nécessaire
+            image = image.resize((150, 150), Image.LANCZOS)
             photo = ImageTk.PhotoImage(image)
             image_label = Label(self.popup, image=photo)
-            image_label.image = photo  # Garder une référence à l'image pour éviter qu'elle soit garbage collected
+            image_label.image = photo
             image_label.pack(pady=10)
 
         ok_button = Button(self.popup, text="OK", font=("bitstream charter", 50), fg="black", command=self.popup.destroy)
         ok_button.pack(pady=20)
-    
+
     def start_usb_monitor(self):
         self.context = pyudev.Context()
         self.monitor = pyudev.Monitor.from_netlink(self.context)
@@ -161,6 +161,6 @@ class DepollutionResultView(tk.Frame):
             self.observer.stop()
             from mainView import MainView
             self.master.switch_frame(MainView)
-            if self.popup is not None:  # Ajouter ces lignes pour détruire le popup
+            if self.popup is not None:  
                 self.popup.destroy()
                 self.popup = None
