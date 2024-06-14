@@ -160,7 +160,7 @@ def main_scan(message_queue):
         else:
             print("Aucun fichier infecté trouvé.")
             message_queue.put("Aucun fichier infecté trouvé.")
-            unmount_usb(usb_mount_point, message_queue)
+           
     else:
         print(f"Le chemin fourni n'est ni un fichier ni un répertoire: {usb_mount_point}")
         sys.exit(1)

@@ -13,18 +13,13 @@ class ImportSelectView(tk.Frame):
         self.configure(bg="#2c3e50")
         self.create_widgets()
         self.selected_files = []
+        
+        # Ouvrir la fenêtre de sélection de fichiers 1 seconde après l'ouverture de la vue
+        self.after(1000, self.select_files)
 
     def create_widgets(self):
-        message_label = tk.Label(self, text="Veuillez sélectionner les fichiers à copier", font=("bitstream charter", 50), fg="white", bg="#2c3e50")
+        message_label = tk.Label(self, text="Veuillez sélectionner les fichiers à copier", font=("bitstream charter", 60), fg="white", bg="#2c3e50")
         message_label.pack(pady=40)
-
-        select_button = tk.Button(self, text="Sélectionner", font=("bitstream charter", 100), bg="#34495e", fg="#ecf0f1", bd=0, highlightthickness=0, width=15, height=2)
-        select_button.pack(pady=20)
-        select_button.config(command=self.select_files)
-
-        copy_button = tk.Button(self, text="Copier", font=("bitstream charter", 100), bg="#60C15A", fg="white", bd=0, highlightthickness=0, width=15, height=2)
-        copy_button.pack(pady=20)
-        copy_button.config(command=self.copy_files)
 
         back_button = tk.Button(self, text="Retour", font=("bitstream charter", 50), bg="#34495e", fg="#ecf0f1", bd=0, highlightthickness=0)
         back_button.pack(side=tk.BOTTOM, pady=20)
@@ -42,15 +37,22 @@ class ImportSelectView(tk.Frame):
             shutil.copy(file, temp_dir)
         self.master.switch_frame(lambda master: EjectUsbView(master))
 
-
     def select_files(self):
         usb_mount_point = importdata.find_usb_mount_point()
         if usb_mount_point:
-            file_paths = filedialog.askopenfilenames(initialdir=usb_mount_point)
+            # Agrandir la fenêtre principale avant d'ouvrir la boîte de dialogue de fichiers
+            self.master.geometry("1200x800")  # Par exemple, redimensionner la fenêtre principale
+
+            file_paths = filedialog.askopenfilenames(
+                initialdir=usb_mount_point,
+                title="Sélectionnez les fichiers à copier",
+                filetypes=[("Tous les fichiers", "*.*")],
+                multiple=True
+            )
             print(f"Selected files: {file_paths}")
             self.selected_files = file_paths
             
+            # Copier les fichiers immédiatement après la sélection
+            self.copy_files()
         else:
             print("Aucune clé USB montée n'a été trouvée.")
-
-    

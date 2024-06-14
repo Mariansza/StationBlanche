@@ -3,6 +3,7 @@ from tkinter import Button, Label, Toplevel, ttk
 import queue
 from PIL import Image, ImageTk
 import itertools
+import pyudev
 
 class DepollutionResultView(tk.Frame):
     def __init__(self, master, message_queue):
@@ -15,6 +16,8 @@ class DepollutionResultView(tk.Frame):
         self.create_widgets()
         self.update_messages()
         self.animate_loading()  # Commencer l'animation au démarrage
+        self.popup = None
+        self.start_usb_monitor()
 
     def create_widgets(self):
         frame = tk.Frame(self, bg="#2c3e50")
@@ -78,7 +81,7 @@ class DepollutionResultView(tk.Frame):
                 self.animation_running = False
                 from depollutionView import DepollutionView
                 self.master.switch_frame(DepollutionView)
-                self.master._frame.start_depuration_process()
+                self.master._frame.usb_event('add', None)
                 
 
         except queue.Empty:
@@ -108,21 +111,21 @@ class DepollutionResultView(tk.Frame):
             self.after(25, self.animate_loading)  # Changer d'image toutes les 100 ms
 
     def show_custom_popup(self, title, message, fg="black"):
-        popup = Toplevel(self)
-        popup.title(title)
+        self.popup = Toplevel(self)
+        self.popup.title(title)
 
         # Get the screen width and height
-        screen_width = popup.winfo_screenwidth()
-        screen_height = popup.winfo_screenheight()
+        screen_width = self.popup.winfo_screenwidth()
+        screen_height = self.popup.winfo_screenheight()
 
         # Calculate position
         x = (screen_width // 4) - (1200 // 2)
         y = (screen_height // 2) - (700 // 2)
 
         # Set the position of the window to the center of the screen
-        popup.geometry('%dx%d+%d+%d' % (1200, 700, x, y))  # Augmenter la hauteur pour l'image
+        self.popup.geometry('%dx%d+%d+%d' % (1200, 700, x, y))  # Augmenter la hauteur pour l'image
 
-        label = Label(popup, text=message, font=("bitstream charter", 50), fg=fg)
+        label = Label(self.popup, text=message, font=("bitstream charter", 50), fg=fg)
         label.pack(pady=20)
 
         if "Aucun fichier infecté trouvé." in message:
@@ -130,7 +133,7 @@ class DepollutionResultView(tk.Frame):
             image = Image.open(image_path)
             image = image.resize((250, 250), Image.LANCZOS)  # Redimensionner l'image si nécessaire
             photo = ImageTk.PhotoImage(image)
-            image_label = Label(popup, image=photo)
+            image_label = Label(self.popup, image=photo)
             image_label.image = photo  # Garder une référence à l'image pour éviter qu'elle soit garbage collected
             image_label.pack(pady=10)
         
@@ -139,12 +142,25 @@ class DepollutionResultView(tk.Frame):
             image = Image.open(image_path)
             image = image.resize((150, 150), Image.LANCZOS)  # Redimensionner l'image si nécessaire
             photo = ImageTk.PhotoImage(image)
-            image_label = Label(popup, image=photo)
+            image_label = Label(self.popup, image=photo)
             image_label.image = photo  # Garder une référence à l'image pour éviter qu'elle soit garbage collected
             image_label.pack(pady=10)
 
-
-        
-
-        ok_button = Button(popup, text="OK", font=("bitstream charter", 50), fg="black", command=popup.destroy)
+        ok_button = Button(self.popup, text="OK", font=("bitstream charter", 50), fg="black", command=self.popup.destroy)
         ok_button.pack(pady=20)
+    
+    def start_usb_monitor(self):
+        self.context = pyudev.Context()
+        self.monitor = pyudev.Monitor.from_netlink(self.context)
+        self.monitor.filter_by(subsystem='block', device_type='partition')
+        self.observer = pyudev.MonitorObserver(self.monitor, self.usb_event)
+        self.observer.start()
+
+    def usb_event(self, action, device):
+        if action == 'remove':
+            self.observer.stop()
+            from mainView import MainView
+            self.master.switch_frame(MainView)
+            if self.popup is not None:  # Ajouter ces lignes pour détruire le popup
+                self.popup.destroy()
+                self.popup = None
